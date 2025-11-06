@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - Bot Mode</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <a href="{{ url_for('home') }}" class="btn home-btn">🏠 Home</a>
+            <button id="musicBtn" class="btn music-btn">🔊 Mute Music</button>
+        </div>
+
+        <h1>Play vs Bot</h1>
+
+        <div id="scoreboard">
+            <div class="score">You (X): <span id="xWins">0</span></div>
+            <div class="score">Bot (O): <span id="oWins">0</span></div>
+        </div>
+
+        <div id="game-board">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+        </div>
+
+        <button id="restartBtn">Restart Game</button>
+        <p id="statusText"></p>
+
+        <!-- Background music -->
+        <audio id="bgMusic" src="{{ url_for('static', filename='bg-music.mp3') }}" loop></audio>
+        <audio id="winSound" src="{{ url_for('static', filename='win-sound.mp3') }}"></audio>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('[data-cell]');
+        const statusText = document.getElementById('statusText');
+        const restartBtn = document.getElementById('restartBtn');
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        const winSound = document.getElementById('winSound');
+
+        const player = 'X';
+        const bot = 'O';
+        let board = Array(9).fill("");
+        let gameActive = true;
+        let xWins = 0, oWins = 0;
+
+        // Music Controls
+        document.body.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.3;
+                bgMusic.play().catch(()=>{});
+            }
+        }, { once: true });
+
+        musicBtn.addEventListener('click', () => {
+            bgMusic.muted = !bgMusic.muted;
+            musicBtn.textContent = bgMusic.muted ? '🔇 Unmute Music' : '🔊 Mute Music';
+        });
+
+        // Player Move
+        cells.forEach((cell, i) => {
+            cell.addEventListener('click', async () => {
+                if (!gameActive || board[i] !== "") return;
+                board[i] = player;
+                cell.textContent = player;
+                const winner = checkWinner(board);
+                if (winner) return endGame(winner);
+                if (!board.includes("")) return endGame("Draw");
+
+                // Delay the bot move by 1 second for realism
+                gameActive = false;
+                setTimeout(async () => {
+                    const winner = await makeBotMove();
+                    if (winner) endGame(winner);
+                    else gameActive = true;
+                }, 1000);
+            });
+        });
+
+        async function makeBotMove() {
+            const response = await fetch('/bot-move', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ board, bot })
+            });
+            const data = await response.json();
+            board = data.board;
+            cells[data.move].textContent = bot;
+            return data.winner;
+        }
+
+        function checkWinner(b) {
+            const combos = [
+                [0,1,2],[3,4,5],[6,7,8],
+                [0,3,6],[1,4,7],[2,5,8],
+                [0,4,8],[2,4,6]
+            ];
+            for (let [a,b,c] of combos) {
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            if (!board.includes("")) return "Draw";
+            return null;
+        }
+
+        function endGame(winner) {
+            gameActive = false;
+
+            if (winner === player) {
+                xWins++;
+                document.getElementById('xWins').textContent = xWins;
+                statusText.textContent = "You Win! 🎉";
+                winSound.currentTime = 0;
+                winSound.play();
+            } else if (winner === bot) {
+                oWins++;
+                document.getElementById('oWins').textContent = oWins;
+                statusText.textContent = "Bot Wins! 🤖";
+                winSound.currentTime = 0;
+                winSound.play();
+            } else {
+                statusText.textContent = "It's a Draw!";
+            }
+        }
+
+        restartBtn.addEventListener('click', () => {
+            board = Array(9).fill("");
+            cells.forEach(c => c.textContent = "");
+            statusText.textContent = "";
+            gameActive = true;
+        });
+    </script>
+</body>
+</html>

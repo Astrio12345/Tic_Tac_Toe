@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="logo">Tic Tac Toe</h1>
+
+        <div class="menu">
+            <a href="{{ url_for('game') }}" class="btn">🎮 Play vs Human</a>
+            <a href="{{ url_for('bot') }}" class="btn">🤖 Play vs Bot</a>
+        </div>
+
+        <!-- Music control -->
+        <button id="musicBtn">🔊 Mute Music</button>
+
+        <!-- Background music -->
+        <audio id="bgMusic" src="{{ url_for('static', filename='home-bg.mp3') }}" loop></audio>
+    </div>
+
+    <script>
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        // Auto-play after first interaction
+        document.body.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.3;
+                bgMusic.play().catch(err => console.log(err));
+            }
+        }, { once: true });
+
+        // Toggle mute/unmute
+        musicBtn.addEventListener('click', () => {
+            bgMusic.muted = !bgMusic.muted;
+            musicBtn.textContent = bgMusic.muted ? '🔇 Unmute Music' : '🔊 Mute Music';
+        });
+    </script>
+</body>
+</html>

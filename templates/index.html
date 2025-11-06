@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="top-bar">
+        <button id="homeBtn">🏠 Home</button>
+        <button id="musicBtn">🔊 Music: On</button>
+    </div>
+
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+    <div id="scoreboard">
+    <div class="score">
+        <span class="player">X</span>: <span id="xWins">0</span>
+    </div>
+    <div class="score">
+        <span class="player">O</span>: <span id="oWins">0</span>
+    </div>
+    </div>
+        <!-- Win animation -->
+        <div id="win-animation">
+            <img src="{{ url_for('static', filename='win.gif') }}" alt="Win Animation">
+        </div>
+
+        <!-- Audio files -->
+        <audio id="bgMusic" src="{{ url_for('static', filename='bg-music.mp3') }}" loop></audio>
+        <audio id="winSound" src="{{ url_for('static', filename='win-sound.mp3') }}"></audio>
+
+        <div id="game-board">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+        </div>
+
+        <button id="restartBtn">Restart Game</button>
+        <p id="statusText"></p>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('[data-cell]');
+        const statusText = document.getElementById('statusText');
+        const restartBtn = document.getElementById('restartBtn');
+        const winAnimation = document.getElementById('win-animation');
+        const bgMusic = document.getElementById('bgMusic');
+        const winSound = document.getElementById('winSound');
+        const musicBtn = document.getElementById('musicBtn');
+        const homeBtn = document.getElementById('homeBtn');
+
+        const winningCombos = [
+            [0,1,2],[3,4,5],[6,7,8],
+            [0,3,6],[1,4,7],[2,5,8],
+            [0,4,8],[2,4,6]
+        ];
+
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let musicOn = true;
+
+        // Auto-play background music on first interaction
+        document.body.addEventListener('click', () => {
+            if (bgMusic.paused && musicOn) {
+                bgMusic.volume = 0.3;
+                bgMusic.play().catch(err => console.log(err));
+            }
+        }, { once: true });
+
+        // Music toggle button
+        musicBtn.addEventListener('click', () => {
+            if (musicOn) {
+                bgMusic.pause();
+                musicBtn.textContent = "🔇 Music: Off";
+            } else {
+                bgMusic.play().catch(err => console.log(err));
+                musicBtn.textContent = "🔊 Music: On";
+            }
+            musicOn = !musicOn;
+        });
+
+        // Home button (for now just reloads)
+        homeBtn.addEventListener('click', () => {
+            window.location.href = "/";
+        });
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                if (cell.textContent || !gameActive) return;
+                cell.textContent = currentPlayer;
+                cell.classList.add('played');
+                if (checkWin()) {
+                    statusText.textContent = `${currentPlayer} Wins! 🎉`;
+                    winAnimation.style.display = 'block';
+                    winSound.currentTime = 0;
+                    winSound.play();
+                    gameActive = false;
+                    return;
+                }
+                if ([...cells].every(c => c.textContent)) {
+                    statusText.textContent = "It's a Draw!";
+                    gameActive = false;
+                    return;
+                }
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusText.textContent = `${currentPlayer}'s Turn`;
+            });
+        });
+
+        restartBtn.addEventListener('click', () => {
+            cells.forEach(c => {
+                c.textContent = '';
+                c.classList.remove('played');
+            });
+            winAnimation.style.display = 'none';
+            currentPlayer = 'X';
+            gameActive = true;
+            statusText.textContent = "X's Turn";
+        });
+
+        function checkWin() {
+            return winningCombos.some(combo => {
+                return combo.every(i => cells[i].textContent === currentPlayer);
+            });
+        }
+
+        statusText.textContent = "X's Turn";
+
+        let xWins = 0;
+let oWins = 0;
+
+function updateScore(winner) {
+    if (winner === 'X') {
+        xWins++;
+        document.getElementById('xWins').textContent = xWins;
+    } else if (winner === 'O') {
+        oWins++;
+        document.getElementById('oWins').textContent = oWins;
+    }
+}
+
+function checkWin() {
+    const won = winningCombos.some(combo => {
+        return combo.every(i => cells[i].textContent === currentPlayer);
+    });
+    if (won) {
+        updateScore(currentPlayer);
+    }
+    return won;
+}
+
+
+    </script>
+
+
+</body>
+</html>
